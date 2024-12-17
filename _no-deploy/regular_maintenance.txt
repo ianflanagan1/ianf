@@ -1,0 +1,5 @@
+# A list of tasks that should be performed regularly on the server(s)
+# To be replaced by scripts
+
+sudo apt-get update && sudo apt-get upgrade
+php artisan auth:clear-resets  # clear expired password reset tokens

@@ -1,0 +1,216 @@
+#!/bin/bash
+
+# stop execution on error or undefined
+set -eu
+
+usage () {
+    echo "Syntax: $(basename ${BASH_SOURCE[0]}) PROJECT_NAME ENVIRONMENT_NAME BUILD_NUMBER PHP_VERSION SUCCESSFUL_RELEASES_TO_KEEP"
+}
+
+
+###### VALIDATE ARGUMENTS ######
+
+# validate number of arguments
+if [ $# -ne 5 ]; then
+    echo "Error: requires 5 arguments" 1>&2
+    usage
+    exit 1
+fi
+
+PROJECT_NAME=$1
+ENVIRONMENT_NAME=$2
+BUILD_NUMBER=$3
+PHP_VERSION=$4
+SUCCESSFUL_RELEASES_TO_KEEP=$5
+
+# validate PROJECT_NAME alphanumeric _ . -
+if [[ ! "$PROJECT_NAME" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+    echo "Error: PROJECT_NAME must be alphanumeric or _ . -" 1>&2
+    usage
+    exit 2
+fi
+
+# validate ENVIRONMENT_NAME value
+if [ "$ENVIRONMENT_NAME" != "staging" ] && [ "$ENVIRONMENT_NAME" != "production" ]; then
+    echo "Error: ENVIRONMENT_NAME must be 'staging' or 'production'" 1>&2
+    usage
+    exit 3
+fi
+
+# validate BUILD_NUMBER is unsigned integer
+if [[ ! "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+    echo "Error: BUILD_NUMBER must be an unsigned integer" 1>&2
+    usage
+    exit 4
+fi
+
+# check group exists
+if ! getent group "$PROJECT_NAME" >/dev/null; then
+    echo "Error: '$PROJECT_NAME' group does not exist" 1>&2
+    exit 5
+fi
+
+# validate PHP_VERSION is major/minor version (two unsigned integers separated by a dot)
+if [[ ! "$PHP_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    echo "Error: PHP_VERSION must take the form: *.*" 1>&2
+    usage
+    exit 6
+fi
+
+PHP_FPM="php$PHP_VERSION-fpm"
+
+# check versioned PHP_FPM is running
+if ! systemctl is-active --quiet "$PHP_FPM"; then
+    echo "Error: $PHP_FPM is not active" 1>&2
+    exit 7
+fi
+
+# validate SUCCESSFUL_RELEASES_TO_KEEP is a positive integer
+if [[ ! "$SUCCESSFUL_RELEASES_TO_KEEP" =~ ^[0-9]+$ ]]; then
+    echo "Error: SUCCESSFUL_RELEASES_TO_KEEP must be a positive integer" 1>&2
+    usage
+    exit 8
+fi
+
+WEB_ROOT="/var/www"
+NGINX_INCLUDES_PATH="/etc/nginx/includes/root_directories"
+ENVIRONMENT_PATH="$WEB_ROOT/$PROJECT_NAME/$ENVIRONMENT_NAME"
+RELEASES_PATH="$ENVIRONMENT_PATH/releases"
+BUILD_PATH="$RELEASES_PATH/$BUILD_NUMBER"
+ENV_FILE_PATH="$ENVIRONMENT_PATH/deploy/.env"
+LOG_FILE_PATH="$BUILD_PATH/storage/logs/laravel.log"
+SQLITE_FILE_PATH="$BUILD_PATH/database/database.sqlite"
+NGINX_ROOT_DIRECTORY_FILE_PATH="$NGINX_INCLUDES_PATH/$PROJECT_NAME-$ENVIRONMENT_NAME"
+CURRENT_SYMLINK="$ENVIRONMENT_PATH/current"
+
+#check build directory exists
+if [ ! -d "$BUILD_PATH" ]; then
+    echo "Error: $BUILD_PATH directory does not exist" 1>&2
+    exit 9
+fi
+
+
+###### SET PERMISSIONS #######################################
+
+echo 'Setting permissions'
+chown -R "www-data:$PROJECT_NAME" "$BUILD_PATH"
+chmod -R 0440 "$BUILD_PATH"
+find "$BUILD_PATH" -type d -exec chmod 0550 {} +
+chmod -R 0770 "$BUILD_PATH/storage" "$BUILD_PATH/bootstrap/cache"
+
+# laravel.log also needs group write access (for console commands)
+if [ -f "$LOG_FILE_PATH" ]; then
+    chmod 0660 "$LOG_FILE_PATH"
+else
+    install -o www-data -g "$PROJECT_NAME" -m 0660 /dev/null "$LOG_FILE_PATH"
+fi
+
+# ./database and ./database/database.sqlite also need group write access (for console commands)
+chmod 0770 "$BUILD_PATH/database"
+if [ -f "$SQLITE_FILE_PATH" ]; then
+    chmod 0660 "$SQLITE_FILE_PATH"
+else
+    install -o www-data -g "$PROJECT_NAME" -m 0660 /dev/null "$SQLITE_FILE_PATH"
+fi
+
+
+###### FURTHER CHECKS ########################################
+
+# check .env exists
+if [ ! -f $ENV_FILE_PATH ]; then
+    echo "Error: $ENV_FILE_PATH file does not exist" 1>&2
+    exit 10
+fi
+
+# if the directory Nginx references doesn't exist yet, create it
+if [ ! -d $NGINX_INCLUDES_PATH ]; then
+    mkdir -p $NGINX_INCLUDES_PATH
+fi
+
+
+###### IMPLEMENT BUILD #######################################
+
+# overwrite the file Nginx references for the project's root directory (create backup)
+cp -f "$NGINX_ROOT_DIRECTORY_FILE_PATH" "$NGINX_ROOT_DIRECTORY_FILE_PATH.bak"
+echo "root $BUILD_PATH/public;" > "$NGINX_ROOT_DIRECTORY_FILE_PATH"
+
+restore_nginx_root_directory_file_backup() {
+    mv -f "$NGINX_ROOT_DIRECTORY_FILE_PATH.bak" "$NGINX_ROOT_DIRECTORY_FILE_PATH"
+}
+
+# verify Nginx config
+if ! nginx -t; then
+    restore_nginx_root_directory_file_backup
+    echo "Error: Problem with nginx config" 1>&2
+    exit 11
+fi
+
+# overwrite symlink to build path for /etc/supervisor/conf.d files to reference (Nginx will not use) (create backup)
+echo 'Setting symlinks'
+cp -Pf "$CURRENT_SYMLINK" "$CURRENT_SYMLINK.bak"
+ln -snf "$BUILD_PATH" "$CURRENT_SYMLINK"
+
+restore_current_symlink_backup() {
+    mv -Tf "$CURRENT_SYMLINK.bak" "$CURRENT_SYMLINK"
+}
+
+cd "$BUILD_PATH"
+php artisan storage:link
+
+# copy .env to build directory
+install -o www-data -g "$PROJECT_NAME" -m 0400 "$ENV_FILE_PATH" "$BUILD_PATH/.env"
+
+
+###### WIND-DOWN -> SWITCH -> WIND-UP ########################
+
+echo 'Switching live build'
+if [ -f "/etc/supervisor/conf.d/$PROJECT_NAME-$ENVIRONMENT_NAME.conf" ]; then
+    supervisorctl stop "$PROJECT_NAME-$ENVIRONMENT_NAME-worker:"
+fi
+
+php artisan optimize:clear
+
+nginx -s reload
+service "$PHP_FPM" reload
+
+if [ -f "/etc/supervisor/conf.d/$PROJECT_NAME-$ENVIRONMENT_NAME.conf" ]; then
+    if ! supervisorctl start "$PROJECT_NAME-$ENVIRONMENT_NAME-worker:"; then
+        echo "Error: Supervisor error" 1>&2
+        exit 12
+fi
+fi
+
+php artisan optimize
+# config:cache  => bootstrap/cache/config.php       root:root 644
+# event:cache   => bootstrap/cache/configs.php      root:root 644
+# route:cache   => bootstrap/cache/routes-v7.php    root:root 644
+# view:cache    => storage/framework/views/.        root:root 644
+#               => bootstrap/cache/packages.php     root:root 755
+#               => bootstrap/cache/services.php     root:root 755
+
+# mark as successful release
+echo "$BUILD_NUMBER" > "$BUILD_PATH/.success"
+
+
+###### CLEAN UP ##############################################
+
+echo 'Cleaning up'
+# remove failed releases
+for RELEASE_DIRECTORY in $(find $RELEASES_PATH -mindepth 1 -maxdepth 1 -type d); do
+    if [ ! -f "$RELEASE_DIRECTORY/.success" ]; then
+        echo "Deleting failed build: $RELEASE_DIRECTORY"
+        rm -rf "$RELEASE_DIRECTORY"
+    fi
+done
+
+# remove excess old releases
+if [ $SUCCESSFUL_RELEASES_TO_KEEP -gt 0 ] && [ $(find $RELEASES_PATH -mindepth 1 -maxdepth 1 -type d | wc -l) -gt $SUCCESSFUL_RELEASES_TO_KEEP ]; then
+    echo "Deleting excess old builds:"
+    find $RELEASES_PATH -mindepth 1 -maxdepth 1 -type d | sort -V | head -n -$SUCCESSFUL_RELEASES_TO_KEEP
+    find $RELEASES_PATH -mindepth 1 -maxdepth 1 -type d | sort -V | head -n -$SUCCESSFUL_RELEASES_TO_KEEP | xargs rm -rf
+fi
+
+# purge backups
+rm -f "$NGINX_ROOT_DIRECTORY_FILE_PATH.bak" "$CURRENT_SYMLINK.bak"
+
+echo "Deployment script completed!"

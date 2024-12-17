@@ -1,0 +1,51 @@
+# PRE-COMMIT PROCEDURE
+search: "dd("
+
+./vendor/bin/pint --dirty -v
+php artisan test --coverage --min=80
+php artisan dusk
+
+
+# CREATE FEATURE BRANCH
+git checkout develop
+git pull
+git checkout -b feature/<name>
+git push -u origin feature/<name>
+
+
+# RESET TO LAST COMMIT
+git reset HEAD --hard
+git clean -fd
+
+# delete last local commit (keep changes)
+git reset HEAD~1
+
+
+# REBASE FROM DEVELOP
+git checkout feature/<name>
+git pull --rebase origin develop
+# EQUIVALENT TO
+git checkout feature/<name>
+git fetch origin
+git rebase origin/develop
+
+
+# DELETE LAST LOCAL COMMIT (keep changes)
+git reset HEAD~1
+
+
+# RESET TO LAST COMMIT
+git reset HEAD --hard
+git clean -fd
+
+
+# POSTGRESS PASSWORD
+#   ok            " [ ] ( ) { } < > _ . - ~ ` + = : ; | ? ! @ £ $ % ^ & * / \
+#   loud error    '
+#   silent error  #
+
+# REDIS PASSWORD
+#   ok            [ ] ( ) { } < > _ . - ~ ` + = : ; | ? ! @ £ $ % ^ & * / \
+#   loud error    ' "
+#   silent error  #
+
