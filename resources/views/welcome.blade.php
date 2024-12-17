@@ -12,7 +12,6 @@
 
         <!-- Styles / Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @endif
     </head>
     <body class="font-sans antialiased">
         <div class="h-screen flex justify-center items-center">ianf.dev</div>
