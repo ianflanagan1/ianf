@@ -1,3 +1,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+h1 {
+    @apply text-xl uppercase font-semibold;
+}
+.screenshots {
+    @apply flex flex-wrap mt-10 mb-14;
+}
+.screenshots > * {
+    @apply mr-10 mb-10 bg-gray-300 rounded-xl p-10 flex;
+    /* h-96 w-96 */
+}
+.screenshots img {
+    height: 50rem;
+}
+.screenshots > * > div {
+    @apply w-72 ml-6;
+}
+.screenshots h3 {
+    @apply text-center uppercase text-xl mt-32;
+}
+.screenshots p {
+    @apply text-center mt-10;
+}

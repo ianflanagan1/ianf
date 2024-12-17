@@ -40,6 +40,7 @@ initialize_on_server() {
         install -m 0644 -o www-data -g "$PROJECT_NAME" <(echo "<?php echo 'hello';") "/var/www/$PROJECT_NAME/$ENVIRONMENT_NAME/releases/0/public/index.php"
         install -m 0755 -o root -g root -d "/etc/nginx/includes" "/etc/nginx/includes/root_directories"
         echo "root /var/www/$PROJECT_NAME/$ENVIRONMENT_NAME/releases/0/public;" > "/etc/nginx/includes/root_directories/$PROJECT_NAME-$ENVIRONMENT_NAME"
+        ln -snf "/var/www/$PROJECT_NAME/$ENVIRONMENT_NAME/releases/0" "/var/www/$PROJECT_NAME/$ENVIRONMENT_NAME/current"
         install -m 0555 -o root -g "$PROJECT_NAME" -d "/var/log/$PROJECT_NAME" "/var/log/$PROJECT_NAME/$ENVIRONMENT_NAME"
         ln -snf /etc/nginx/sites-available/$PROJECT_NAME-$ENVIRONMENT_NAME /etc/nginx/sites-enabled/$PROJECT_NAME-$ENVIRONMENT_NAME
 
