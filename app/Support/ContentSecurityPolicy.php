@@ -15,13 +15,13 @@ class ContentSecurityPolicy extends Policy
             // default: child-src connect-src font-src frame-src img-src manifest-src media-src
             //          object-src prefetch-src script-src script-src-elem script-src-attr
             //          style-src style-src-elem style-src-attr worker-src
-            ->addDirective(Directive::DEFAULT, Keyword::SELF)
+            ->addDirective(Directive::DEFAULT, Keyword::NONE)
 
             // override default
             ->addDirective(Directive::CONNECT, [Keyword::SELF]) // 'ws:', 'wss:'
             ->addDirective(Directive::FONT, [Keyword::SELF, 'fonts.bunny.net'])
             ->addDirective(Directive::IMG, [Keyword::SELF]) // 'data:'
-            ->addDirective(Directive::OBJECT, Keyword::NONE)
+            //->addDirective(Directive::OBJECT, Keyword::NONE)
             ->addDirective(Directive::SCRIPT, [Keyword::SELF]) // 'js-agent.newrelic.com', Keyword::UNSAFE_EVAL, Keyword::UNSAFE_INLINE
             ->addDirective(Directive::STYLE, [Keyword::SELF, 'fonts.bunny.net'])
             // ->addNonceForDirective(Directive::SCRIPT)
