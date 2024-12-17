@@ -26,25 +26,25 @@
                 <x-nica-screenshot :title="'Service Account: Menu 2'" :image="'service-account3-menu2'" :paragraphs="[
                     'Link to the NICA Questionnaires Mini Program (集思社问卷), and service account articles titled \'Become a NICA member\' and \'How to take part in events\'',
                 ]" />
-                <x-nica-screenshot :title="'Aricle Example 1'" :image="'article1'" :paragraphs="[
+                <x-nica-screenshot :title="'Article Example 1'" :image="'article1'" :paragraphs="[
                     'An article published by the service account',
                 ]" />
-                <x-nica-screenshot :title="'Aricle Example 2'" :image="'article2'" :paragraphs="[
+                <x-nica-screenshot :title="'Article Example 2'" :image="'article2'" :paragraphs="[
                     'An article published by the service account',
                 ]" />
-                <x-nica-screenshot :title="'Aricle Example 2'" :image="'article3'" :paragraphs="[
+                <x-nica-screenshot :title="'Article Example 3'" :image="'article3'" :paragraphs="[
                     'An article published by the service account',
                 ]" />
             </div>
             <h1>Mini Program</h1>
             <div class="screenshots">
                 <x-nica-screenshot :title="'Mini Programs Entry point'" :image="'entry-mp'" :paragraphs="[
-                    'Accessed by swiping down on the stardard Chats view of WeChat',
+                    'Accessed by swiping down on the stardard \'Chats\' view of WeChat',
                     'The top-left icon is the NICA Mini Program (集思社问卷)',
                 ]" />
                 <x-nica-screenshot :title="'Index'" :image="'index'" :paragraphs="[
-                    'Auto-rotating carousel header posters with links to service account articles on various topics',
-                    'Scrollable list of projects: questionnairres, product usage diaries',
+                    'Auto-rotating carousel header with posters as links to service account articles on various topics',
+                    'Scrollable list of projects: questionnairres, product usage diaries, events',
                     'Bottom menu with the options: \'Home\', \'About us\' and \'Profile\'',
                 ]" />
                 <x-nica-screenshot :title="'Loading'" :image="'loading'" :paragraphs="[
@@ -56,26 +56,17 @@
                 ]" />
 
                 <x-nica-screenshot :title="'Login'" :image="'login'" :paragraphs="[
-                    'Auto-rotating carousel header posters with links to service account articles on various topics',
-                    'Scrollable list of projects: questionnairres, product usage diaries',
-                    'Bottom menu with the options: \'Home\', \'About us\' and \'Profile\'',
+                    'Login is required to sign-up to any questionnaire',
+                    'For legal compliance, the user must agree to the privacy policy and a special user agreement that permits thei inputted data to be exported overseas',
                 ]" />
                 <x-nica-screenshot :title="'Login: Get phone number'" :image="'login-get-phone'" :paragraphs="[
                     'Select phone number to use from numbers held by WeChat',
                 ]" />
-                <x-nica-screenshot :title="'Login: Privacy Policy'" :image="'privacy-policy'" :paragraphs="[
-                    'Auto-rotating carousel header posters with links to service account articles on various topics',
-                    'Scrollable list of projects: questionnairres, product usage diaries',
-                    'Bottom menu with the options: \'Home\', \'About us\' and \'Profile\'',
-                ]" />
-                <x-nica-screenshot :title="'Login: User Agreement'" :image="'user-agreement'" :paragraphs="[
-                    'Auto-rotating carousel header posters with links to service account articles on various topics',
-                    'Scrollable list of projects: questionnairres, product usage diaries',
-                    'Bottom menu with the options: \'Home\', \'About us\' and \'Profile\'',
-                ]" />
+                <x-nica-screenshot :title="'Login: Privacy Policy'" :image="'privacy-policy'" :paragraphs="[]" />
+                <x-nica-screenshot :title="'Login: User Agreement'" :image="'user-agreement'" :paragraphs="[]" />
 
                 <x-nica-screenshot :title="'Input: Checkboxes'" :image="'input-checkbox-top'" :paragraphs="[
-                    'Input type for multi-choice pre-defined options',
+                    'Input type for pre-defined multiple-select options',
                     'Minimum checks defined when creating the questionnaire',
                     'Questionnaire progress indicator at the top',
                 ]" />
@@ -83,7 +74,7 @@
                     'Progress buttons access by scrolling, to encouage consideration of all options before progressing',
                 ]" />
                 <x-nica-screenshot :title="'Input: Radio'" :image="'input-radio'" :paragraphs="[
-                    'For single-choice pre-defined answers',
+                    'Input type for pre-defined single-select options',
                 ]" />
                 <x-nica-screenshot :title="'Input: Integer'" :image="'input-integer'" :paragraphs="[
                     'For numerical input',
@@ -92,7 +83,7 @@
                     'For text input',
                 ]" />
                 <x-nica-screenshot :title="'Input: Images'" :image="'input-images-choose'" :paragraphs="[
-                    'Select images to uploaded images from device, or from the camera app directly',
+                    'Select images to uploaded from device, or from the camera app directly',
                 ]" />
                 <x-nica-screenshot :title="'Input: Images (selected)'" :image="'input-images'" :paragraphs="[
                     'Display of uploaded images with the option to reorder, delete, or continue uploading',
