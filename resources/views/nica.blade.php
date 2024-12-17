@@ -14,7 +14,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
-        <div class="p-10">
+        <div id="holder">
             <h1>Service Account</h1>
             <div class="screenshots">
                 <x-nica-screenshot :title="'Service Account'" :image="'service-account3'" :paragraphs="[
